@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Expo
+app/.expo/
+app/dist/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Native
+*.orig.*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+admin/.next/
+admin/out/
+
+# OS
+.DS_Store
+*.log
+
+# Local SQLite (dev artifacts)
+*.sqlite
+*.sqlite-journal
+
+# IDE
+.idea/
+.vscode/settings.json
