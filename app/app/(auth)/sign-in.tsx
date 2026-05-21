@@ -43,7 +43,7 @@ export default function SignInScreen() {
     >
       <View style={styles.container}>
         <Text style={styles.title}>{t('Welcome back')}</Text>
-        <Text style={styles.subtitle}>{t('Sign in to your TST account.')}</Text>
+        <Text style={styles.subtitle}>{t('Sign in to your Two Small Things account.')}</Text>
 
         <TextInput
           style={styles.input}
