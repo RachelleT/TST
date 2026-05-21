@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
   SourceSerif4_400Regular,
+  SourceSerif4_500Medium,
   SourceSerif4_600SemiBold,
 } from '@expo-google-fonts/source-serif-4';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
@@ -29,6 +30,7 @@ export const unstable_settings = {
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     SourceSerif4_400Regular,
+    SourceSerif4_500Medium,
     SourceSerif4_600SemiBold,
     Inter_400Regular,
     Inter_500Medium,
