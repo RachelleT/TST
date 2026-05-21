@@ -1,5 +1,4 @@
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 
 export default function TabLayout() {
@@ -15,11 +14,7 @@ export default function TabLayout() {
         options={{
           title: 'Library',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'books.vertical', android: 'collections_bookmark', web: 'collections_bookmark' }}
-              tintColor={color}
-              size={24}
-            />
+            <SymbolView name="books.vertical" tintColor={color} size={24} />
           ),
         }}
       />
@@ -28,11 +23,7 @@ export default function TabLayout() {
         options={{
           title: 'Search',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
-              tintColor={color}
-              size={24}
-            />
+            <SymbolView name="magnifyingglass" tintColor={color} size={24} />
           ),
         }}
       />
@@ -41,11 +32,7 @@ export default function TabLayout() {
         options={{
           title: 'Quiz',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'checkmark.circle', android: 'task_alt', web: 'task_alt' }}
-              tintColor={color}
-              size={24}
-            />
+            <SymbolView name="checkmark.circle" tintColor={color} size={24} />
           ),
         }}
       />
@@ -54,11 +41,7 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'gearshape', android: 'settings', web: 'settings' }}
-              tintColor={color}
-              size={24}
-            />
+            <SymbolView name="gearshape" tintColor={color} size={24} />
           ),
         }}
       />
