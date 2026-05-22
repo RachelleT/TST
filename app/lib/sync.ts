@@ -2,6 +2,14 @@ import { supabase } from './supabase';
 import { getDb } from './db/migrations';
 import { getPendingRows, markSynced, setMetaValue, getMetaValue } from './db/crud';
 import { useSyncStore } from './stores/sync';
+import { pickFact } from './fact-picker';
+
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
 
 const SYNC_DEBOUNCE_MS = 2000;
 const SYNC_MIN_INTERVAL_MS = 5 * 60 * 1000;
@@ -48,8 +56,9 @@ export async function runSync(): Promise<void> {
     await pullSavedWords(userId);
     await pullFactAssignments(userId);
 
-    // Refresh facts catalog if stale
+    // Refresh facts catalog if stale, then backfill any words missing a fact
     await refreshFactsIfStale();
+    await backfillFactAssignments(userId);
 
     await setMetaValue('last_sync_at', new Date().toISOString());
     setSuccess();
@@ -333,4 +342,42 @@ async function refreshFactsIfStale(): Promise<void> {
     );
   }
   await setMetaValue('facts_cached_at', now);
+}
+
+// ─── fact assignment backfill ─────────────────────────────────────────────────
+// Runs after every sync. Picks a fact for any saved word that never got one
+// (e.g. words saved before the facts catalog was first populated locally).
+
+async function backfillFactAssignments(userId: string): Promise<void> {
+  const db = await getDb();
+
+  // Short-circuit if local facts table is still empty
+  const factCount = await db.getFirstAsync<{ n: number }>(
+    'SELECT COUNT(*) AS n FROM facts WHERE active = 1',
+  );
+  if (!factCount || factCount.n === 0) return;
+
+  // Find saved words with no fact assignment
+  const unassigned = await db.getAllAsync<{ id: string }>(
+    `SELECT sw.id FROM saved_words sw
+     LEFT JOIN fact_assignments fa
+       ON fa.saved_word_id = sw.id AND fa.deleted = 0
+     WHERE sw.user_id = ? AND sw.deleted = 0 AND fa.id IS NULL`,
+    [userId],
+  );
+  if (unassigned.length === 0) return;
+
+  const now = new Date().toISOString();
+  for (const row of unassigned) {
+    const factId = await pickFact(userId);
+    if (!factId) break; // pool exhausted
+
+    await db.runAsync(
+      `INSERT OR IGNORE INTO fact_assignments
+         (id, user_id, saved_word_id, fact_id, created_at,
+          local_updated_at, sync_pending, deleted)
+       VALUES (?, ?, ?, ?, ?, ?, 1, 0)`,
+      [generateUUID(), userId, row.id, factId, now, now],
+    );
+  }
 }
