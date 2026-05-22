@@ -43,15 +43,15 @@ type SearchState =
 function SearchResultCard({
   entry,
   isSaved,
-  savedSenses,
-  savingIndex,
+  saved,
+  saving,
   onSave,
 }: {
   entry: DictionaryEntry;
   isSaved: (word: string, senseIndex: number) => boolean;
-  savedSenses: Set<number>;
-  savingIndex: number | null;
-  onSave: (senseIndex: number) => void;
+  saved: boolean;
+  saving: boolean;
+  onSave: () => void;
 }) {
   const { colors } = useTheme();
   const spacing = useSpacing();
@@ -115,8 +115,6 @@ function SearchResultCard({
           const sPos = sense.partOfSpeech as PartOfSpeech;
           const sPosColors = colors.pos[sPos];
           const label = senseLabel(entry.senses, i);
-          const alreadySaved = isSaved(entry.word, sense.senseIndex) || savedSenses.has(sense.senseIndex);
-          const saving = savingIndex === sense.senseIndex;
 
           return (
             <View key={i}>
@@ -173,29 +171,32 @@ function SearchResultCard({
                 </View>
               ) : null}
 
-              {/* Save / already saved */}
-              {alreadySaved ? (
-                <View style={styles.savedRow}>
-                  <AppText variant="caption" color={colors.text.secondary}>
-                    {t('In your library')}
-                  </AppText>
-                  <TouchableOpacity onPress={() => router.push('/(tabs)/library')}>
-                    <AppText variant="caption" color={colors.accent.primary}>
-                      {t('View →')}
-                    </AppText>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <Button
-                  label={t('Save')}
-                  loading={saving}
-                  onPress={() => onSave(sense.senseIndex)}
-                  style={styles.saveBtn}
-                />
-              )}
             </View>
           );
         })}
+
+        {/* ── Single save button for the whole card ── */}
+        <View style={[styles.cardFooter, { borderTopColor: colors.border.subtle }]}>
+          {saved ? (
+            <View style={styles.savedRow}>
+              <AppText variant="body" color={colors.text.secondary}>
+                {t('In your library')}
+              </AppText>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/library')}>
+                <AppText variant="bodyMedium" color={colors.accent.primary}>
+                  {t('View')}
+                </AppText>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Button
+              label={t('Save to library')}
+              loading={saving}
+              onPress={onSave}
+              style={styles.saveBtn}
+            />
+          )}
+        </View>
       </View>
     </View>
   );
@@ -211,8 +212,8 @@ export default function SearchScreen() {
   const [state, setState] = useState<SearchState>({ tag: 'idle' });
   const [localSuggestions, setLocalSuggestions] = useState<string[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [savingIndex, setSavingIndex] = useState<number | null>(null);
-  const [savedSenses, setSavedSenses] = useState<Set<number>>(new Set());
+  const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
 
   const inputRef = useRef<TextInput>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -240,8 +241,7 @@ export default function SearchScreen() {
 
   function handleQueryChange(text: string) {
     setQuery(text);
-    setSavedSenses(new Set());
-    setSavingIndex(null);
+    setJustSaved(false);
     if (state.tag !== 'idle') setState({ tag: 'idle' });
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -256,8 +256,7 @@ export default function SearchScreen() {
       if (!q) return;
       setState({ tag: 'loading' });
       setLocalSuggestions([]);
-      setSavedSenses(new Set());
-      setSavingIndex(null);
+      setJustSaved(false);
 
       try {
         const entry = await freeDictionary.lookup(q);
@@ -278,17 +277,18 @@ export default function SearchScreen() {
     [recentSearches],
   );
 
-  async function handleSave(senseIndex: number) {
+  async function handleSave() {
     if (state.tag !== 'result' || !session?.user.id) return;
-    setSavingIndex(senseIndex);
+    setSaving(true);
     try {
-      const saved = await saveWord(session.user.id, state.entry, senseIndex);
+      // Always saves the primary sense (index 0)
+      const saved = await saveWord(session.user.id, state.entry, 0);
       addWord(saved);
-      setSavedSenses((prev) => new Set(prev).add(senseIndex));
+      setJustSaved(true);
     } catch (err) {
       console.error('Save failed', err);
     } finally {
-      setSavingIndex(null);
+      setSaving(false);
     }
   }
 
@@ -296,8 +296,7 @@ export default function SearchScreen() {
     setQuery('');
     setState({ tag: 'idle' });
     setLocalSuggestions([]);
-    setSavedSenses(new Set());
-    setSavingIndex(null);
+    setJustSaved(false);
     inputRef.current?.focus();
   }
 
@@ -405,8 +404,8 @@ export default function SearchScreen() {
             <SearchResultCard
               entry={state.entry}
               isSaved={isSaved}
-              savedSenses={savedSenses}
-              savingIndex={savingIndex}
+              saved={isSaved(state.entry.word, 0) || justSaved}
+              saving={saving}
               onSave={handleSave}
             />
           )}
@@ -532,11 +531,14 @@ const styles = StyleSheet.create({
   },
   sentenceText: { fontStyle: 'italic' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  cardFooter: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
+  },
   savedRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 4,
   },
   saveBtn: {},
 
