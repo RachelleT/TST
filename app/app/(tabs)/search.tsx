@@ -17,6 +17,7 @@ import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
 import { Chip } from '@/components/Chip';
+import { ZoneLabel } from '@/components/ZoneLabel';
 import { useTheme } from '@/lib/hooks/useTheme';
 import { useSpacing } from '@/lib/theme/spacing';
 import { t } from '@/lib/i18n';
@@ -37,106 +38,165 @@ type SearchState =
   | { tag: 'offline' }
   | { tag: 'error'; query: string };
 
-// ── Definition card shown for each sense in the search result ─────────────────
+// ── Single card that shows all senses for a word ──────────────────────────────
 
-function SenseCard({
-  sense,
-  index,
-  total,
-  saved,
-  saving,
+function SearchResultCard({
+  entry,
+  isSaved,
+  savedSenses,
+  savingIndex,
   onSave,
 }: {
-  sense: DictionarySense;
-  index: number;
-  total: number;
-  saved: boolean;
-  saving: boolean;
-  onSave: () => void;
+  entry: DictionaryEntry;
+  isSaved: (word: string, senseIndex: number) => boolean;
+  savedSenses: Set<number>;
+  savingIndex: number | null;
+  onSave: (senseIndex: number) => void;
 }) {
   const { colors } = useTheme();
-  const posColors = colors.pos[sense.partOfSpeech as PartOfSpeech];
+  const spacing = useSpacing();
 
-  // Number within its POS group (only shown when same POS appears multiple times)
-  const label = total > 1 ? `${index + 1}` : null;
+  // Frame colour is driven by the first sense's POS
+  const primaryPos = entry.senses[0]?.partOfSpeech as PartOfSpeech ?? 'noun';
+  const posColors = colors.pos[primaryPos];
+
+  // Group senses by POS so we know when to number them
+  function senseLabel(senses: DictionarySense[], index: number): string | null {
+    const pos = senses[index].partOfSpeech;
+    const siblings = senses.filter((s) => s.partOfSpeech === pos).length;
+    if (siblings < 2) return null;
+    const rank = senses.slice(0, index).filter((s) => s.partOfSpeech === pos).length + 1;
+    return String(rank);
+  }
 
   return (
     <View
       style={[
-        styles.senseCard,
+        styles.cardFrame,
         {
-          backgroundColor: colors.surface.card,
-          borderColor: colors.border.subtle,
-          borderLeftColor: posColors.frame,
+          backgroundColor: posColors.frame,
+          borderRadius: spacing.cardRadiusOuter,
+          padding: spacing.frameThickness,
         },
       ]}
     >
-      {/* POS badge + number */}
-      <View style={styles.senseCardHeader}>
-        <Badge pos={sense.partOfSpeech as PartOfSpeech} />
-        {label ? (
-          <AppText variant="meta" color={colors.text.tertiary}>
-            {label}
+      <View
+        style={[
+          styles.cardInner,
+          {
+            backgroundColor: colors.surface.card,
+            borderRadius: spacing.cardRadiusInner,
+            borderColor: colors.border.subtle,
+            padding: spacing.cardPadding,
+          },
+        ]}
+      >
+        {/* ── Word header ── */}
+        <View style={styles.wordHeader}>
+          <AppText
+            variant="display"
+            color={posColors.headerText}
+            style={styles.wordName}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            {entry.word}
+          </AppText>
+        </View>
+
+        {entry.pronunciation ? (
+          <AppText variant="pronunciation" color={colors.text.secondary} style={styles.pronunciation}>
+            {entry.pronunciation}
           </AppText>
         ) : null}
+
+        {/* ── One block per sense ── */}
+        {entry.senses.map((sense, i) => {
+          const sPos = sense.partOfSpeech as PartOfSpeech;
+          const sPosColors = colors.pos[sPos];
+          const label = senseLabel(entry.senses, i);
+          const alreadySaved = isSaved(entry.word, sense.senseIndex) || savedSenses.has(sense.senseIndex);
+          const saving = savingIndex === sense.senseIndex;
+
+          return (
+            <View key={i}>
+              {/* Thin divider between senses */}
+              {i > 0 && (
+                <View style={[styles.senseDivider, { backgroundColor: colors.border.subtle }]} />
+              )}
+
+              {/* POS badge + optional number */}
+              <View style={styles.senseHeader}>
+                <Badge pos={sPos} />
+                {label ? (
+                  <AppText variant="meta" color={colors.text.tertiary}>
+                    {label}
+                  </AppText>
+                ) : null}
+              </View>
+
+              {/* Definition */}
+              <View style={styles.zone}>
+                <ZoneLabel>{t('Definition')}</ZoneLabel>
+                <AppText variant="body" color={colors.text.primary} style={styles.defText}>
+                  {sense.definition}
+                </AppText>
+              </View>
+
+              {/* Example sentence */}
+              {sense.exampleSentence ? (
+                <View
+                  style={[
+                    styles.sentenceZone,
+                    {
+                      backgroundColor: sPosColors.sentenceBg,
+                      borderLeftColor: sPosColors.sentenceBorder,
+                    },
+                  ]}
+                >
+                  <ZoneLabel>{t('In a sentence')}</ZoneLabel>
+                  <AppText variant="caption" color={colors.text.primary} style={styles.sentenceText}>
+                    {sense.exampleSentence}
+                  </AppText>
+                </View>
+              ) : null}
+
+              {/* Synonyms */}
+              {sense.synonyms.length > 0 ? (
+                <View style={styles.zone}>
+                  <ZoneLabel>{t('Similar')}</ZoneLabel>
+                  <View style={styles.chips}>
+                    {sense.synonyms.slice(0, 6).map((syn) => (
+                      <Chip key={syn} label={syn} pos={sPos} />
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+
+              {/* Save / already saved */}
+              {alreadySaved ? (
+                <View style={styles.savedRow}>
+                  <AppText variant="caption" color={colors.text.secondary}>
+                    {t('In your library')}
+                  </AppText>
+                  <TouchableOpacity onPress={() => router.push('/(tabs)/library')}>
+                    <AppText variant="caption" color={colors.accent.primary}>
+                      {t('View →')}
+                    </AppText>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <Button
+                  label={t('Save')}
+                  loading={saving}
+                  onPress={() => onSave(sense.senseIndex)}
+                  style={styles.saveBtn}
+                />
+              )}
+            </View>
+          );
+        })}
       </View>
-
-      {/* Definition */}
-      <AppText variant="body" color={colors.text.primary} style={styles.defText}>
-        {sense.definition}
-      </AppText>
-
-      {/* Example sentence */}
-      {sense.exampleSentence ? (
-        <View
-          style={[
-            styles.exampleBlock,
-            {
-              backgroundColor: posColors.sentenceBg,
-              borderLeftColor: posColors.sentenceBorder,
-            },
-          ]}
-        >
-          <AppText variant="caption" color={colors.text.primary} style={styles.exampleText}>
-            {sense.exampleSentence}
-          </AppText>
-        </View>
-      ) : null}
-
-      {/* Synonyms */}
-      {sense.synonyms.length > 0 ? (
-        <View style={styles.synonymRow}>
-          <AppText variant="meta" color={colors.text.tertiary} style={styles.synonymLabel}>
-            {t('Similar:')}
-          </AppText>
-          <View style={styles.chips}>
-            {sense.synonyms.slice(0, 6).map((syn) => (
-              <Chip key={syn} label={syn} pos={sense.partOfSpeech as PartOfSpeech} />
-            ))}
-          </View>
-        </View>
-      ) : null}
-
-      {/* Save / already saved */}
-      {saved ? (
-        <View style={styles.savedRow}>
-          <AppText variant="caption" color={colors.text.secondary}>
-            {t('In your library')}
-          </AppText>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/library')}>
-            <AppText variant="caption" color={colors.accent.primary}>
-              {t('View →')}
-            </AppText>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <Button
-          label={t('Save')}
-          loading={saving}
-          onPress={onSave}
-          style={styles.saveBtn}
-        />
-      )}
     </View>
   );
 }
@@ -151,7 +211,6 @@ export default function SearchScreen() {
   const [state, setState] = useState<SearchState>({ tag: 'idle' });
   const [localSuggestions, setLocalSuggestions] = useState<string[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  // Track which senseIndexes are saving / have been saved this session
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [savedSenses, setSavedSenses] = useState<Set<number>>(new Set());
 
@@ -221,10 +280,9 @@ export default function SearchScreen() {
 
   async function handleSave(senseIndex: number) {
     if (state.tag !== 'result' || !session?.user.id) return;
-    const { entry } = state;
     setSavingIndex(senseIndex);
     try {
-      const saved = await saveWord(session.user.id, entry, senseIndex);
+      const saved = await saveWord(session.user.id, state.entry, senseIndex);
       addWord(saved);
       setSavedSenses((prev) => new Set(prev).add(senseIndex));
     } catch (err) {
@@ -241,14 +299,6 @@ export default function SearchScreen() {
     setSavedSenses(new Set());
     setSavingIndex(null);
     inputRef.current?.focus();
-  }
-
-  // Group senses by POS so we know each sense's rank within its group
-  function getSenseRank(senses: DictionarySense[], index: number): { rank: number; total: number } {
-    const pos = senses[index].partOfSpeech;
-    const group = senses.filter((s) => s.partOfSpeech === pos);
-    const rank = senses.slice(0, index).filter((s) => s.partOfSpeech === pos).length;
-    return { rank, total: group.length };
   }
 
   return (
@@ -301,20 +351,12 @@ export default function SearchScreen() {
             keyboardShouldPersistTaps="handled"
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={[
-                  styles.suggestionRow,
-                  { borderBottomColor: colors.border.subtle },
-                ]}
-                onPress={() => {
-                  setQuery(item);
-                  handleSubmit(item);
-                }}
+                style={[styles.suggestionRow, { borderBottomColor: colors.border.subtle }]}
+                onPress={() => { setQuery(item); handleSubmit(item); }}
                 accessibilityRole="button"
                 accessibilityLabel={item}
               >
-                <AppText variant="body" color={colors.text.primary}>
-                  {item}
-                </AppText>
+                <AppText variant="body" color={colors.text.primary}>{item}</AppText>
               </TouchableOpacity>
             )}
           />
@@ -322,39 +364,24 @@ export default function SearchScreen() {
 
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[
-            styles.scroll,
-            { paddingHorizontal: spacing.pagePadding },
-          ]}
+          contentContainerStyle={[styles.scroll, { paddingHorizontal: spacing.pagePadding }]}
         >
           {/* ── Idle: recent searches or hint ── */}
           {state.tag === 'idle' && localSuggestions.length === 0 &&
             (recentSearches.length > 0 ? (
               <View>
-                <AppText
-                  variant="meta"
-                  color={colors.text.tertiary}
-                  style={styles.sectionLabel}
-                >
+                <AppText variant="meta" color={colors.text.tertiary} style={styles.sectionLabel}>
                   {t('Recent')}
                 </AppText>
                 {recentSearches.map((w) => (
                   <TouchableOpacity
                     key={w}
-                    style={[
-                      styles.recentRow,
-                      { borderBottomColor: colors.border.subtle },
-                    ]}
-                    onPress={() => {
-                      setQuery(w);
-                      handleSubmit(w);
-                    }}
+                    style={[styles.recentRow, { borderBottomColor: colors.border.subtle }]}
+                    onPress={() => { setQuery(w); handleSubmit(w); }}
                     accessibilityRole="button"
                     accessibilityLabel={w}
                   >
-                    <AppText variant="body" color={colors.text.primary}>
-                      {w}
-                    </AppText>
+                    <AppText variant="body" color={colors.text.primary}>{w}</AppText>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -373,39 +400,15 @@ export default function SearchScreen() {
             />
           )}
 
-          {/* ── Result: word header + all definitions ── */}
+          {/* ── Result: single card with all senses ── */}
           {state.tag === 'result' && (
-            <View style={styles.resultWrapper}>
-              {/* Word name + pronunciation */}
-              <View style={styles.wordHeader}>
-                <AppText variant="display" color={colors.text.primary}>
-                  {state.entry.word}
-                </AppText>
-                {state.entry.pronunciation ? (
-                  <AppText variant="pronunciation" color={colors.text.secondary} style={styles.pronunciation}>
-                    {state.entry.pronunciation}
-                  </AppText>
-                ) : null}
-              </View>
-
-              {/* One SenseCard per definition */}
-              {state.entry.senses.map((sense, i) => {
-                const { rank, total } = getSenseRank(state.entry.senses, i);
-                const alreadySaved = isSaved(state.entry.word, sense.senseIndex);
-                const justSaved = savedSenses.has(sense.senseIndex);
-                return (
-                  <SenseCard
-                    key={i}
-                    sense={sense}
-                    index={rank}
-                    total={total}
-                    saved={alreadySaved || justSaved}
-                    saving={savingIndex === sense.senseIndex}
-                    onSave={() => handleSave(sense.senseIndex)}
-                  />
-                );
-              })}
-            </View>
+            <SearchResultCard
+              entry={state.entry}
+              isSaved={isSaved}
+              savedSenses={savedSenses}
+              savingIndex={savingIndex}
+              onSave={handleSave}
+            />
           )}
 
           {/* ── Not found ── */}
@@ -423,16 +426,11 @@ export default function SearchScreen() {
                     {state.suggestions.map((s) => (
                       <TouchableOpacity
                         key={s}
-                        onPress={() => {
-                          setQuery(s);
-                          handleSubmit(s);
-                        }}
+                        onPress={() => { setQuery(s); handleSubmit(s); }}
                         accessibilityRole="button"
                         accessibilityLabel={`Search for ${s}`}
                       >
-                        <AppText variant="bodyMedium" color={colors.accent.primary}>
-                          {s}
-                        </AppText>
+                        <AppText variant="bodyMedium" color={colors.accent.primary}>{s}</AppText>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -506,50 +504,39 @@ const styles = StyleSheet.create({
   },
   spinner: { marginTop: 40 },
 
-  // Result
-  resultWrapper: { gap: 12 },
-  wordHeader: { marginBottom: 4 },
-  pronunciation: { marginTop: 2 },
-
-  // Sense card
-  senseCard: {
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderLeftWidth: 4,
-    padding: 16,
+  // Card frame (matches WordCard)
+  cardFrame: {},
+  cardInner: {
+    borderWidth: 0.5,
+    overflow: 'hidden',
     gap: 10,
   },
-  senseCardHeader: {
+  wordHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
-  defText: {
-    lineHeight: 22,
-  },
-  exampleBlock: {
+  wordName: { flex: 1 },
+  pronunciation: {},
+
+  // Per-sense layout
+  senseDivider: { height: StyleSheet.hairlineWidth, marginVertical: 4 },
+  senseHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  zone: { gap: 4 },
+  defText: { lineHeight: 22 },
+  sentenceZone: {
     borderLeftWidth: 2,
     paddingLeft: 10,
     paddingVertical: 6,
     borderRadius: 2,
+    gap: 2,
   },
-  exampleText: {
-    fontStyle: 'italic',
-  },
-  synonymRow: {
-    gap: 6,
-  },
-  synonymLabel: {},
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
+  sentenceText: { fontStyle: 'italic' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
   savedRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 4,
+    paddingVertical: 4,
   },
   saveBtn: {},
 
