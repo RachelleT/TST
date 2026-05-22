@@ -13,7 +13,7 @@ import { IconStar } from '@tabler/icons-react-native';
 
 const ALL_POS: PartOfSpeech[] = [
   'noun', 'verb', 'adjective', 'adverb',
-  'preposition', 'conjunction', 'interjection', 'pronoun',
+  'preposition',
 ];
 
 const SAMPLE_WORD: SavedWord = {

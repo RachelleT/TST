@@ -5,10 +5,7 @@ export type PartOfSpeech =
   | 'verb'
   | 'adjective'
   | 'adverb'
-  | 'preposition'
-  | 'conjunction'
-  | 'interjection'
-  | 'pronoun';
+  | 'preposition';
 
 export type FactCategory = 'flag' | 'landmark' | 'constellation' | 'animal' | 'geography';
 

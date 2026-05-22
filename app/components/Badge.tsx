@@ -9,9 +9,6 @@ const LABELS: Record<PartOfSpeech, string> = {
   adjective: 'adj',
   adverb: 'adv',
   preposition: 'prep',
-  conjunction: 'conj',
-  interjection: 'interj',
-  pronoun: 'pron',
 };
 
 interface BadgeProps {

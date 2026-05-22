@@ -26,9 +26,6 @@ const posLight: Record<PartOfSpeech, PosTokens> = {
   adjective:    { frame: '#2F5240', badgeFill: '#EF9F27', badgeText: '#4A2515', headerText: '#1A3328', sentenceBg: '#EEF4EF', sentenceBorder: '#9CB8A4' },
   adverb:       { frame: '#534AB7', badgeFill: '#AFA9EC', badgeText: '#26215C', headerText: '#26215C', sentenceBg: '#F2F1FA', sentenceBorder: '#B5B0E4' },
   preposition:  { frame: '#7A5A0F', badgeFill: '#F4C775', badgeText: '#412402', headerText: '#412402', sentenceBg: '#FBF5E6', sentenceBorder: '#D4B86A' },
-  conjunction:  { frame: '#1F6E56', badgeFill: '#9FE1CB', badgeText: '#04342C', headerText: '#04342C', sentenceBg: '#EAF7F3', sentenceBorder: '#82C9B4' },
-  interjection: { frame: '#993556', badgeFill: '#F4C0D1', badgeText: '#4B1528', headerText: '#4B1528', sentenceBg: '#FBF0F4', sentenceBorder: '#E4A0B8' },
-  pronoun:      { frame: '#5F5E5A', badgeFill: '#D3D1C7', badgeText: '#2C2C2A', headerText: '#2C2C2A', sentenceBg: '#F5F4F2', sentenceBorder: '#C4C3BE' },
 };
 
 const posDark: Record<PartOfSpeech, PosTokens> = {
@@ -37,9 +34,6 @@ const posDark: Record<PartOfSpeech, PosTokens> = {
   adjective:    { frame: '#5C7B66', badgeFill: '#EF9F27', badgeText: '#4A2515', headerText: '#A8C4AF', sentenceBg: '#232D26', sentenceBorder: '#5C7B66' },
   adverb:       { frame: '#7068C9', badgeFill: '#AFA9EC', badgeText: '#26215C', headerText: '#AFA9EC', sentenceBg: '#252338', sentenceBorder: '#7068C9' },
   preposition:  { frame: '#A07B2A', badgeFill: '#F4C775', badgeText: '#412402', headerText: '#F4C775', sentenceBg: '#2A2518', sentenceBorder: '#A07B2A' },
-  conjunction:  { frame: '#3F8A75', badgeFill: '#9FE1CB', badgeText: '#04342C', headerText: '#9FE1CB', sentenceBg: '#1E2E2A', sentenceBorder: '#3F8A75' },
-  interjection: { frame: '#B0507A', badgeFill: '#F4C0D1', badgeText: '#4B1528', headerText: '#F4C0D1', sentenceBg: '#2B1F24', sentenceBorder: '#B0507A' },
-  pronoun:      { frame: '#888780', badgeFill: '#D3D1C7', badgeText: '#2C2C2A', headerText: '#D3D1C7', sentenceBg: '#282826', sentenceBorder: '#888780' },
 };
 
 export const lightColors: ColorTokens = {

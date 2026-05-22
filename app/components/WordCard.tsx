@@ -57,7 +57,7 @@ export function WordCard({
   const isTablet = width >= 600;
   const reducedMotion = useReducedMotion();
 
-  const pos = (word.partOfSpeech as PartOfSpeech) ?? 'pronoun';
+  const pos = (word.partOfSpeech as PartOfSpeech) ?? 'noun';
   const posColors = colors.pos[pos];
 
   const [factRevealed, setFactRevealed] = useState(false);
