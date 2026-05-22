@@ -23,17 +23,17 @@ export interface ColorTokens {
 const posLight: Record<PartOfSpeech, PosTokens> = {
   noun:         { frame: '#993C1D', badgeFill: '#F0997B', badgeText: '#4A1B0C', headerText: '#4A1B0C', sentenceBg: '#FFF0EB', sentenceBorder: '#E8A087' },
   verb:         { frame: '#185FA5', badgeFill: '#85B7EB', badgeText: '#042C53', headerText: '#042C53', sentenceBg: '#EFF5FD', sentenceBorder: '#8BB8E8' },
-  adjective:    { frame: '#2F5240', badgeFill: '#EF9F27', badgeText: '#4A2515', headerText: '#1A3328', sentenceBg: '#EEF4EF', sentenceBorder: '#9CB8A4' },
+  adjective:    { frame: '#9C6A0E', badgeFill: '#EF9F27', badgeText: '#3D2400', headerText: '#3D2400', sentenceBg: '#FDF3E0', sentenceBorder: '#D4A050' },
   adverb:       { frame: '#534AB7', badgeFill: '#AFA9EC', badgeText: '#26215C', headerText: '#26215C', sentenceBg: '#F2F1FA', sentenceBorder: '#B5B0E4' },
-  preposition:  { frame: '#7A5A0F', badgeFill: '#F4C775', badgeText: '#412402', headerText: '#412402', sentenceBg: '#FBF5E6', sentenceBorder: '#D4B86A' },
+  preposition:  { frame: '#8B3A62', badgeFill: '#F2AECE', badgeText: '#450D2A', headerText: '#450D2A', sentenceBg: '#FDF0F5', sentenceBorder: '#E090B8' },
 };
 
 const posDark: Record<PartOfSpeech, PosTokens> = {
   noun:         { frame: '#A35238', badgeFill: '#F0997B', badgeText: '#4A1B0C', headerText: '#F0997B', sentenceBg: '#2E2320', sentenceBorder: '#A35238' },
   verb:         { frame: '#3A7BB8', badgeFill: '#85B7EB', badgeText: '#042C53', headerText: '#85B7EB', sentenceBg: '#1E2A36', sentenceBorder: '#3A7BB8' },
-  adjective:    { frame: '#5C7B66', badgeFill: '#EF9F27', badgeText: '#4A2515', headerText: '#A8C4AF', sentenceBg: '#232D26', sentenceBorder: '#5C7B66' },
+  adjective:    { frame: '#BF8020', badgeFill: '#EF9F27', badgeText: '#3D2400', headerText: '#EFC860', sentenceBg: '#2A2115', sentenceBorder: '#BF8020' },
   adverb:       { frame: '#7068C9', badgeFill: '#AFA9EC', badgeText: '#26215C', headerText: '#AFA9EC', sentenceBg: '#252338', sentenceBorder: '#7068C9' },
-  preposition:  { frame: '#A07B2A', badgeFill: '#F4C775', badgeText: '#412402', headerText: '#F4C775', sentenceBg: '#2A2518', sentenceBorder: '#A07B2A' },
+  preposition:  { frame: '#A84D7A', badgeFill: '#F2AECE', badgeText: '#450D2A', headerText: '#F2AECE', sentenceBg: '#2A1820', sentenceBorder: '#A84D7A' },
 };
 
 export const lightColors: ColorTokens = {
