@@ -41,6 +41,7 @@ export default function TabLayout() {
         name="library"
         options={{
           title: 'Library',
+          headerShown: false, // library/_layout.tsx Stack handles its own header
           tabBarIcon: ({ color }) => (
             <SymbolView name="books.vertical" tintColor={color} size={24} />
           ),

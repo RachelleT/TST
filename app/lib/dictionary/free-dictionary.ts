@@ -49,22 +49,38 @@ function extractSynonyms(meaning: ApiMeaning): string[] {
 
 function normalizeSenses(meanings: ApiMeaning[]): DictionarySense[] {
   const senses: DictionarySense[] = [];
-  for (let i = 0; i < meanings.length; i++) {
-    const m = meanings[i];
+  let senseIndex = 0;
+
+  for (const m of meanings) {
     const pos = POS_MAP[m.partOfSpeech.toLowerCase()];
     if (!pos) continue;
-    const def = m.definitions[0];
-    if (!def) continue;
-    const rawExample = def.example ?? '';
-    const exampleSentence = rawExample ? (filterSentence(rawExample) ?? '') : '';
-    senses.push({
-      senseIndex: i,
-      partOfSpeech: pos,
-      definition: def.definition,
-      exampleSentence,
-      synonyms: extractSynonyms(m),
-    });
+
+    // Synonyms at the meaning level apply to every definition within it
+    const meaningSyns = new Set<string>(m.synonyms);
+
+    // Each definition becomes its own selectable sense (cap at 4 per POS)
+    for (const def of m.definitions.slice(0, 4)) {
+      if (senses.length >= 8) break; // hard cap on total senses
+
+      const allSyns = new Set<string>(meaningSyns);
+      for (const syn of def.synonyms ?? []) allSyns.add(syn);
+
+      const rawExample = def.example ?? '';
+      const exampleSentence = rawExample ? (filterSentence(rawExample) ?? '') : '';
+
+      senses.push({
+        senseIndex,
+        partOfSpeech: pos,
+        definition: def.definition,
+        exampleSentence,
+        synonyms: Array.from(allSyns).slice(0, 8),
+      });
+      senseIndex++;
+    }
+
+    if (senses.length >= 8) break;
   }
+
   // Fallback: if no sense matched our POS list, use first meaning mapped to noun
   if (senses.length === 0 && meanings.length > 0) {
     const m = meanings[0];
@@ -76,10 +92,11 @@ function normalizeSenses(meanings: ApiMeaning[]): DictionarySense[] {
         partOfSpeech: 'noun',
         definition: def.definition,
         exampleSentence: rawExample ? (filterSentence(rawExample) ?? '') : '',
-        synonyms: extractSynonyms(m),
+        synonyms: Array.from(new Set<string>(m.synonyms)).slice(0, 8),
       });
     }
   }
+
   return senses;
 }
 

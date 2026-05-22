@@ -284,38 +284,50 @@ export default function SearchScreen() {
             <View style={styles.resultWrapper}>
               {currentEntry.senses.length > 1 && (
                 <View style={styles.senseRow}>
-                  {currentEntry.senses.map((s, i) => (
-                    <TouchableOpacity
-                      key={i}
-                      style={[
-                        styles.senseChip,
-                        {
-                          backgroundColor:
-                            i === currentSenseIndex
-                              ? colors.accent.primary
-                              : colors.surface.elevated,
-                        },
-                      ]}
-                      onPress={() =>
-                        state.tag === 'result'
-                          ? setState({ tag: 'result', entry: currentEntry, senseIndex: i })
-                          : undefined
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel={s.partOfSpeech}
-                    >
-                      <AppText
-                        variant="meta"
-                        color={
-                          i === currentSenseIndex
-                            ? colors.surface.page
-                            : colors.text.secondary
+                  {currentEntry.senses.map((s, i) => {
+                    // Count how many senses share this POS so we can number duplicates
+                    const siblings = currentEntry.senses.filter(
+                      (x) => x.partOfSpeech === s.partOfSpeech,
+                    ).length;
+                    const posCount = currentEntry.senses
+                      .slice(0, i)
+                      .filter((x) => x.partOfSpeech === s.partOfSpeech).length;
+                    const label =
+                      siblings > 1 ? `${s.partOfSpeech} ${posCount + 1}` : s.partOfSpeech;
+
+                    return (
+                      <TouchableOpacity
+                        key={i}
+                        style={[
+                          styles.senseChip,
+                          {
+                            backgroundColor:
+                              i === currentSenseIndex
+                                ? colors.accent.primary
+                                : colors.surface.elevated,
+                          },
+                        ]}
+                        onPress={() =>
+                          state.tag === 'result'
+                            ? setState({ tag: 'result', entry: currentEntry, senseIndex: i })
+                            : undefined
                         }
+                        accessibilityRole="button"
+                        accessibilityLabel={label}
                       >
-                        {s.partOfSpeech}
-                      </AppText>
-                    </TouchableOpacity>
-                  ))}
+                        <AppText
+                          variant="meta"
+                          color={
+                            i === currentSenseIndex
+                              ? colors.surface.page
+                              : colors.text.secondary
+                          }
+                        >
+                          {label}
+                        </AppText>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               )}
 
