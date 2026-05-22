@@ -193,6 +193,7 @@ function SearchResultCard({
               label={t('Save to library')}
               loading={saving}
               onPress={onSave}
+              color={posColors.frame}
               style={styles.saveBtn}
             />
           )}

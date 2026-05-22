@@ -20,6 +20,8 @@ interface ButtonProps {
   style?: StyleProp<ViewStyle>;
   /** Icon rendered to the left of the label */
   icon?: ReactNode;
+  /** Override the background colour (text becomes white) */
+  color?: string;
 }
 
 export function Button({
@@ -30,22 +32,25 @@ export function Button({
   disabled = false,
   style,
   icon,
+  color,
 }: ButtonProps) {
   const { colors } = useTheme();
 
-  const bg =
-    variant === 'primary'
+  const bg = color
+    ? color
+    : variant === 'primary'
       ? colors.accent.primary
       : variant === 'secondary'
         ? colors.accent.muted
         : 'transparent';
 
-  const textColor =
-    variant === 'primary'
+  const textColor = color
+    ? colors.surface.page
+    : variant === 'primary'
       ? colors.surface.page
       : colors.accent.primary;
 
-  const borderColor = variant === 'ghost' ? colors.accent.primary : undefined;
+  const borderColor = !color && variant === 'ghost' ? colors.accent.primary : undefined;
 
   return (
     <TouchableOpacity
