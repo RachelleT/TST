@@ -1,15 +1,24 @@
-import { StyleSheet, View, Text } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppText } from '@/components/AppText';
+import { useTheme } from '@/lib/hooks/useTheme';
 import { t } from '@/lib/i18n';
 
 export default function QuizScreen() {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.placeholder}>{t('Save at least 5 words to start a quiz.')}</Text>
-    </View>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface.page }]} edges={['bottom']}>
+      <View style={styles.container}>
+        <AppText variant="body" color={colors.text.secondary}>
+          {t('Save at least 5 words to start a quiz.')}
+        </AppText>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FAFAF8' },
-  placeholder: { fontSize: 16, color: '#6B6B6B', fontFamily: 'Inter_400Regular' },
+  safe: { flex: 1 },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
 });

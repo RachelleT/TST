@@ -305,20 +305,44 @@ async function pullFactAssignments(userId: string): Promise<void> {
 
 async function refreshFactsIfStale(): Promise<void> {
   const db = await getDb();
-  const lastCached = await getMetaValue('facts_cached_at');
 
-  if (lastCached) {
-    const age = Date.now() - new Date(lastCached).getTime();
-    if (age < FACTS_TTL_MS) return;
+  // Check how many facts are actually in local SQLite
+  const localCount = await db.getFirstAsync<{ n: number }>(
+    'SELECT COUNT(*) AS n FROM facts WHERE active = 1',
+  );
+  const hasLocalFacts = (localCount?.n ?? 0) > 0;
+
+  // Only respect the 24-hour cache if we already have facts locally.
+  // If the local table is empty we always pull, regardless of timestamp.
+  if (hasLocalFacts) {
+    const lastCached = await getMetaValue('facts_cached_at');
+    if (lastCached) {
+      const age = Date.now() - new Date(lastCached).getTime();
+      if (age < FACTS_TTL_MS) {
+        console.log('[sync] facts cache fresh, skipping pull');
+        return;
+      }
+    }
+  } else {
+    console.log('[sync] local facts table empty — pulling from Supabase');
   }
 
   const { data, error } = await supabase
     .from('facts')
     .select('*')
     .eq('active', true);
-  if (error) throw new Error(error.message);
-  if (!data || data.length === 0) return;
 
+  if (error) {
+    console.error('[sync] facts pull error:', error.message);
+    throw new Error(error.message);
+  }
+
+  if (!data || data.length === 0) {
+    console.warn('[sync] Supabase returned 0 facts — seed SQL may not have been run');
+    return;
+  }
+
+  console.log(`[sync] inserting ${data.length} facts into local SQLite`);
   const now = new Date().toISOString();
   for (const fact of data) {
     await db.runAsync(
@@ -342,6 +366,7 @@ async function refreshFactsIfStale(): Promise<void> {
     );
   }
   await setMetaValue('facts_cached_at', now);
+  console.log('[sync] facts pull complete');
 }
 
 // ─── fact assignment backfill ─────────────────────────────────────────────────
@@ -367,6 +392,7 @@ async function backfillFactAssignments(userId: string): Promise<void> {
   );
   if (unassigned.length === 0) return;
 
+  console.log(`[sync] backfilling facts for ${unassigned.length} word(s)`);
   const now = new Date().toISOString();
   for (const row of unassigned) {
     const factId = await pickFact(userId);
@@ -380,4 +406,5 @@ async function backfillFactAssignments(userId: string): Promise<void> {
       [generateUUID(), userId, row.id, factId, now, now],
     );
   }
+  console.log('[sync] fact backfill complete');
 }
