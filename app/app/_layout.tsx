@@ -13,6 +13,7 @@ import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/stores/auth';
 import { runMigrations } from '@/lib/db/migrations';
+import { runnSyncIfStale } from '@/lib/sync';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -64,6 +65,7 @@ function RootLayoutNav() {
     if (!initialized) return;
     SplashScreen.hideAsync();
     if (session) {
+      runnSyncIfStale().catch(console.error);
       router.replace('/(tabs)/library');
     } else {
       router.replace('/(auth)/sign-in');

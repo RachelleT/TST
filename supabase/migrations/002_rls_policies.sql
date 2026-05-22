@@ -1,7 +1,8 @@
 -- TST Phase 0: Row-level security policies
 -- Run this in the Supabase dashboard SQL Editor AFTER 001_initial_schema.sql.
+-- Safe to re-run: all policies are dropped and recreated.
 
--- Enable RLS on all user-data tables
+-- Enable RLS on all user-data tables (idempotent)
 ALTER TABLE public.profiles          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saved_words       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fact_assignments  ENABLE ROW LEVEL SECURITY;
@@ -24,6 +25,10 @@ $$;
 
 -- ─── profiles ────────────────────────────────────────────────────────────────
 
+DROP POLICY IF EXISTS "Users can read their own profile"   ON public.profiles;
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+
 CREATE POLICY "Users can read their own profile"
   ON public.profiles FOR SELECT
   USING (auth.uid() = id);
@@ -38,12 +43,16 @@ CREATE POLICY "Users can insert their own profile"
 
 -- ─── saved_words ─────────────────────────────────────────────────────────────
 
+DROP POLICY IF EXISTS "Users can manage their own saved words" ON public.saved_words;
+
 CREATE POLICY "Users can manage their own saved words"
   ON public.saved_words FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
 -- ─── fact_assignments ─────────────────────────────────────────────────────────
+
+DROP POLICY IF EXISTS "Users can manage their own fact assignments" ON public.fact_assignments;
 
 CREATE POLICY "Users can manage their own fact assignments"
   ON public.fact_assignments FOR ALL
@@ -52,6 +61,8 @@ CREATE POLICY "Users can manage their own fact assignments"
 
 -- ─── quiz_attempts ───────────────────────────────────────────────────────────
 
+DROP POLICY IF EXISTS "Users can manage their own quiz attempts" ON public.quiz_attempts;
+
 CREATE POLICY "Users can manage their own quiz attempts"
   ON public.quiz_attempts FOR ALL
   USING (auth.uid() = user_id)
@@ -59,12 +70,18 @@ CREATE POLICY "Users can manage their own quiz attempts"
 
 -- ─── notification_events ─────────────────────────────────────────────────────
 
+DROP POLICY IF EXISTS "Users can manage their own notification events" ON public.notification_events;
+
 CREATE POLICY "Users can manage their own notification events"
   ON public.notification_events FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
 -- ─── fact_reports ─────────────────────────────────────────────────────────────
+
+DROP POLICY IF EXISTS "Users can submit fact reports"    ON public.fact_reports;
+DROP POLICY IF EXISTS "Users can read their own reports" ON public.fact_reports;
+DROP POLICY IF EXISTS "Admins can update fact reports"   ON public.fact_reports;
 
 CREATE POLICY "Users can submit fact reports"
   ON public.fact_reports FOR INSERT
@@ -80,6 +97,9 @@ CREATE POLICY "Admins can update fact reports"
 
 -- ─── facts ────────────────────────────────────────────────────────────────────
 
+DROP POLICY IF EXISTS "Anyone authenticated can read facts" ON public.facts;
+DROP POLICY IF EXISTS "Admins can manage facts"             ON public.facts;
+
 CREATE POLICY "Anyone authenticated can read facts"
   ON public.facts FOR SELECT
   USING (auth.uid() IS NOT NULL);
@@ -91,11 +111,16 @@ CREATE POLICY "Admins can manage facts"
 
 -- ─── app_users ───────────────────────────────────────────────────────────────
 
+DROP POLICY IF EXISTS "Admins can read app_users" ON public.app_users;
+
 CREATE POLICY "Admins can read app_users"
   ON public.app_users FOR SELECT
   USING (public.is_admin());
 
 -- ─── interest_areas ──────────────────────────────────────────────────────────
+
+DROP POLICY IF EXISTS "Anyone authenticated can read interest areas" ON public.interest_areas;
+DROP POLICY IF EXISTS "Admins can manage interest areas"             ON public.interest_areas;
 
 CREATE POLICY "Anyone authenticated can read interest areas"
   ON public.interest_areas FOR SELECT
@@ -108,6 +133,9 @@ CREATE POLICY "Admins can manage interest areas"
 
 -- ─── starter_words ────────────────────────────────────────────────────────────
 
+DROP POLICY IF EXISTS "Anyone authenticated can read starter words" ON public.starter_words;
+DROP POLICY IF EXISTS "Admins can manage starter words"             ON public.starter_words;
+
 CREATE POLICY "Anyone authenticated can read starter words"
   ON public.starter_words FOR SELECT
   USING (auth.uid() IS NOT NULL);
@@ -118,6 +146,9 @@ CREATE POLICY "Admins can manage starter words"
   WITH CHECK (public.is_admin());
 
 -- ─── feature_flags ────────────────────────────────────────────────────────────
+
+DROP POLICY IF EXISTS "Anyone authenticated can read feature flags" ON public.feature_flags;
+DROP POLICY IF EXISTS "Admins can manage feature flags"             ON public.feature_flags;
 
 CREATE POLICY "Anyone authenticated can read feature flags"
   ON public.feature_flags FOR SELECT

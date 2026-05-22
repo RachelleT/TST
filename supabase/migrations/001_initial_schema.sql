@@ -36,6 +36,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_profiles_updated_at ON public.profiles;
 CREATE TRIGGER trg_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
@@ -51,6 +52,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_on_auth_user_created ON auth.users;
 CREATE TRIGGER trg_on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
@@ -79,6 +81,7 @@ CREATE TABLE IF NOT EXISTS public.facts (
   updated_at       timestamptz NOT NULL DEFAULT now()
 );
 
+DROP TRIGGER IF EXISTS trg_facts_updated_at ON public.facts;
 CREATE TRIGGER trg_facts_updated_at
   BEFORE UPDATE ON public.facts
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
@@ -104,6 +107,7 @@ CREATE TABLE IF NOT EXISTS public.saved_words (
 CREATE INDEX IF NOT EXISTS idx_saved_words_user_created
   ON public.saved_words(user_id, created_at DESC);
 
+DROP TRIGGER IF EXISTS trg_saved_words_updated_at ON public.saved_words;
 CREATE TRIGGER trg_saved_words_updated_at
   BEFORE UPDATE ON public.saved_words
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();

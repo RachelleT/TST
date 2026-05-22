@@ -321,7 +321,7 @@ export default function SearchScreen() {
 
               <WordCard
                 word={entryToPreviewWord(currentEntry, currentSenseIndex)}
-                mode="preview"
+                mode="detail"
                 saved={alreadySaved || justSaved}
                 style={styles.card}
               />
