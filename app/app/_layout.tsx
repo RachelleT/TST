@@ -12,6 +12,7 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-goog
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/stores/auth';
+import { runMigrations } from '@/lib/db/migrations';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -55,6 +56,7 @@ function RootLayoutNav() {
   const { session, initialized, initialize } = useAuthStore();
 
   useEffect(() => {
+    runMigrations().catch(console.error);
     initialize();
   }, [initialize]);
 
