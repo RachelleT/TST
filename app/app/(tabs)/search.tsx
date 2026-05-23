@@ -556,22 +556,24 @@ const styles = StyleSheet.create({
   cardsStack: { gap: 16 },
 
   // Per-sense layout
-  senseDivider: { height: StyleSheet.hairlineWidth, marginVertical: 4 },
-  senseHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  zone: { gap: 4 },
+  senseDivider: { height: StyleSheet.hairlineWidth, marginVertical: 12 },
+  senseHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  zone: { gap: 6, marginBottom: 14 },
   defText: { lineHeight: 22 },
   sentenceZone: {
     borderLeftWidth: 2,
     paddingLeft: 10,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 2,
-    gap: 2,
+    gap: 4,
+    marginBottom: 14,
   },
   sentenceText: { fontStyle: 'italic' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
   cardFooter: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 10,
+    paddingTop: 12,
+    marginTop: 4,
   },
   savedRow: {
     flexDirection: 'row',

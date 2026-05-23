@@ -422,7 +422,7 @@ export default function WordDetailScreen() {
             pronunciation={pronunciation}
             onRemove={() => handleRemoveGroup(group)}
             onSynonymPress={(syn) =>
-              router.push({ pathname: '/(tabs)/search', params: { q: syn } })
+              router.push({ pathname: '/(tabs)/library/lookup', params: { q: syn } })
             }
           />
         ))}
@@ -439,18 +439,19 @@ const styles = StyleSheet.create({
   inner: { borderWidth: 0.5, overflow: 'hidden' },
   wordText: { marginBottom: 2 },
   pronunciation: { marginBottom: 8 },
-  badgeRow: { marginBottom: 10 },
-  senseDivider: { height: StyleSheet.hairlineWidth, marginVertical: 10 },
-  zone: { marginBottom: 10 },
-  defText: { marginTop: 2 },
+  badgeRow: { marginBottom: 14 },
+  senseDivider: { height: StyleSheet.hairlineWidth, marginVertical: 12 },
+  zone: { gap: 6, marginBottom: 14 },
+  defText: {},
   sentenceZone: {
     borderLeftWidth: 2,
     paddingLeft: 10,
-    paddingVertical: 6,
-    marginBottom: 10,
+    paddingVertical: 8,
+    marginBottom: 14,
     borderRadius: 2,
+    gap: 4,
   },
-  sentenceText: { marginTop: 2, fontStyle: 'italic' },
+  sentenceText: { fontStyle: 'italic' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
   footer: {
     flexDirection: 'row',
@@ -458,6 +459,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderTopWidth: 0.5,
     marginTop: 4,
-    paddingTop: 8,
+    paddingTop: 12,
   },
 });

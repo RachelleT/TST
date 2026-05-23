@@ -23,6 +23,7 @@ export default function LibraryLayout() {
     >
       <Stack.Screen name="index" options={{ title: 'Library' }} />
       <Stack.Screen name="[wordId]" options={{ title: '' }} />
+      <Stack.Screen name="lookup" options={{ title: '' }} />
     </Stack>
   );
 }
