@@ -53,11 +53,29 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   async load(userId: string) {
     set({ loading: true });
     const db = await getDb();
+    // Order by sense_index ASC so the primary (lowest-index) sense comes first
+    // for each (word, part_of_speech) group after deduplication.
     const rows = await db.getAllAsync<SavedWordRow>(
-      'SELECT * FROM saved_words WHERE user_id = ? AND deleted = 0 ORDER BY created_at DESC',
+      `SELECT * FROM saved_words
+       WHERE user_id = ? AND deleted = 0
+       ORDER BY created_at ASC, sense_index ASC`,
       [userId],
     );
-    set({ words: rows.map(rowToSavedWord), loading: false, loaded: true });
+
+    // Keep one representative row per (word, partOfSpeech) for the list.
+    // The detail screen re-fetches all senses from the API anyway.
+    const seen = new Set<string>();
+    const unique = rows.filter((row) => {
+      const key = `${row.word}:${row.part_of_speech}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Show newest words first (sort by created_at DESC after dedup)
+    unique.sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+    set({ words: unique.map(rowToSavedWord), loading: false, loaded: true });
   },
 
   addWord(word: SavedWord) {

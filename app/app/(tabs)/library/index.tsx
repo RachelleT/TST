@@ -17,6 +17,7 @@ import { useSpacing } from '@/lib/theme/spacing';
 import { useAuthStore } from '@/lib/stores/auth';
 import { useLibraryStore } from '@/lib/stores/library';
 import { runSync } from '@/lib/sync';
+import { backfillMissingSenses } from '@/lib/actions/backfill-senses';
 import { t } from '@/lib/i18n';
 
 function WordRow({ word, onPress }: { word: SavedWord; onPress: () => void }) {
@@ -70,7 +71,14 @@ export default function LibraryIndex() {
   useFocusEffect(
     useCallback(() => {
       if (!session?.user.id) return;
-      load(session.user.id).catch(console.error);
+      const userId = session.user.id;
+      load(userId).catch(console.error);
+
+      // Run the one-time backfill silently in the background.
+      // If it actually inserted new rows, reload the list so they appear.
+      backfillMissingSenses(userId)
+        .then((ran) => { if (ran) load(userId).catch(console.error); })
+        .catch(console.error);
     }, [session?.user.id]),
   );
 

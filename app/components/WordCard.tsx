@@ -39,6 +39,8 @@ interface WordCardProps {
   saved?: boolean;
   onPress?: () => void;
   onBookmarkPress?: () => void;
+  /** Called when the user taps a synonym chip. */
+  onSynonymPress?: (word: string) => void;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -49,6 +51,7 @@ export function WordCard({
   saved = true,
   onPress,
   onBookmarkPress,
+  onSynonymPress,
   style,
 }: WordCardProps) {
   const { colors, type } = useTheme();
@@ -60,8 +63,9 @@ export function WordCard({
   const pos = (word.partOfSpeech as PartOfSpeech) ?? 'noun';
   const posColors = colors.pos[pos];
 
-  const [factRevealed, setFactRevealed] = useState(false);
-  const flip = useSharedValue(0);
+  // In detail mode facts are shown immediately (study view); preview requires a tap
+  const [factRevealed, setFactRevealed] = useState(mode === 'detail');
+  const flip = useSharedValue(mode === 'detail' ? 1 : 0);
 
   function handleFactTap() {
     const toValue = factRevealed ? 0 : 1;
@@ -93,7 +97,7 @@ export function WordCard({
   const frameThickness = spacing.frameThickness;
   const cardPadding = spacing.cardPadding;
 
-  const portraitHeight = isTablet ? 150 : 120;
+  const portraitHeight = isTablet ? 200 : (mode === 'detail' ? 180 : 120);
 
   return (
     <Pressable
@@ -192,7 +196,7 @@ export function WordCard({
         <View style={styles.zone}>
           <ZoneLabel>{t('Definition')}</ZoneLabel>
           <AppText
-            variant="body"
+            variant={mode === 'detail' ? 'bodyMedium' : 'body'}
             style={styles.definitionText}
             numberOfLines={mode === 'preview' ? 3 : undefined}
           >
@@ -212,7 +216,7 @@ export function WordCard({
             ]}
           >
             <ZoneLabel>{t('In a sentence')}</ZoneLabel>
-            <AppText variant="caption" style={styles.sentenceText}>
+            <AppText variant={mode === 'detail' ? 'body' : 'caption'} style={styles.sentenceText}>
               {word.exampleSentence}
             </AppText>
           </View>
@@ -221,10 +225,15 @@ export function WordCard({
         {/* ── Synonyms ── */}
         {word.synonyms.length > 0 ? (
           <View style={styles.zone}>
-            <ZoneLabel>{t('Similar')}</ZoneLabel>
+            <ZoneLabel>{t('Synonyms')}</ZoneLabel>
             <View style={styles.chips}>
-              {word.synonyms.slice(0, 6).map((syn) => (
-                <Chip key={syn} label={syn} pos={pos} />
+              {word.synonyms.slice(0, 6).map((syn, synIdx) => (
+                <Chip
+                  key={`${syn}-${synIdx}`}
+                  label={syn}
+                  pos={pos}
+                  onPress={onSynonymPress ? () => onSynonymPress(syn) : undefined}
+                />
               ))}
             </View>
           </View>

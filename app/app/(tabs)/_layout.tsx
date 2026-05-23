@@ -60,6 +60,7 @@ export default function TabLayout() {
         name="quiz"
         options={{
           title: 'Quiz',
+          headerShown: false, // quiz/_layout.tsx Stack handles its own header
           tabBarIcon: ({ color }) => (
             <SymbolView name="checkmark.circle" tintColor={color} size={24} />
           ),

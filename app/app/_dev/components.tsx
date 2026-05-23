@@ -1,5 +1,6 @@
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { ScrollView, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { AppText } from '@/components/AppText';
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
@@ -9,7 +10,7 @@ import { WordCard } from '@/components/WordCard';
 import { ZoneLabel } from '@/components/ZoneLabel';
 import { useTheme } from '@/lib/hooks/useTheme';
 import { PartOfSpeech, SavedWord, Fact } from '@tst/shared';
-import { IconStar } from '@tabler/icons-react-native';
+import { IconStar, IconArrowLeft } from '@tabler/icons-react-native';
 
 const ALL_POS: PartOfSpeech[] = [
   'noun', 'verb', 'adjective', 'adverb',
@@ -63,6 +64,19 @@ export default function ComponentsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface.page }]}>
+      {/* Back button */}
+      <TouchableOpacity
+        style={[styles.backRow, { borderBottomColor: colors.border.subtle }]}
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+      >
+        <IconArrowLeft size={20} stroke={colors.accent.primary} />
+        <AppText variant="bodyMedium" color={colors.accent.primary}>
+          Back
+        </AppText>
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={styles.scroll}>
 
         <AppText variant="display" color={colors.text.primary} style={styles.pageTitle}>
@@ -223,6 +237,14 @@ export default function ComponentsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   scroll: { padding: 16, gap: 0 },
   pageTitle: { marginBottom: 24 },
   section: { paddingVertical: 16, gap: 8 },

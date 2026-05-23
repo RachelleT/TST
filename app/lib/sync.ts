@@ -50,6 +50,7 @@ export async function runSync(): Promise<void> {
     await pushProfiles(userId);
     await pushSavedWords(userId);
     await pushFactAssignments(userId);
+    await pushQuizAttempts(userId);
 
     // Pull remote changes
     await pullProfile(userId);
@@ -407,4 +408,38 @@ async function backfillFactAssignments(userId: string): Promise<void> {
     );
   }
   console.log('[sync] fact backfill complete');
+}
+
+// ─── quiz_attempts ────────────────────────────────────────────────────────────
+
+interface QuizAttemptRow {
+  id: string;
+  user_id: string;
+  saved_word_id: string;
+  question_format: string;
+  result: string;
+  user_answer: string;
+  expected_answer: string;
+  created_at: string;
+  local_updated_at: string;
+  sync_pending: number;
+}
+
+async function pushQuizAttempts(userId: string): Promise<void> {
+  const pending = await getPendingRows<QuizAttemptRow>('quiz_attempts');
+  for (const row of pending) {
+    if (row.user_id !== userId) continue;
+    const { error } = await supabase.from('quiz_attempts').upsert({
+      id: row.id,
+      user_id: row.user_id,
+      saved_word_id: row.saved_word_id,
+      question_format: row.question_format,
+      result: row.result,
+      user_answer: row.user_answer,
+      expected_answer: row.expected_answer,
+      created_at: row.created_at,
+    });
+    if (error) throw new Error(error.message);
+    await markSynced('quiz_attempts', row.id);
+  }
 }
