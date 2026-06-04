@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   StyleSheet,
   View,
-  Text,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -10,19 +9,31 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link, router } from 'expo-router';
+import { AppText } from '@/components/AppText';
+import { useTheme } from '@/lib/hooks/useTheme';
 import { t } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/stores/auth';
+import { emailError, isValidEmail } from '@/lib/validation';
 
 export default function SignInScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
   const { signIn } = useAuthStore();
 
+  const [email, setEmail]             = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [password, setPassword]       = useState('');
+  const [loading, setLoading]         = useState(false);
+
+  const emailErr = emailTouched ? emailError(email) : null;
+  const canSubmit = !loading && isValidEmail(email) && password.length > 0;
+
   async function handleSignIn() {
-    if (!email.trim() || !password) {
-      Alert.alert(t('Missing fields'), t('Please enter your email and password.'));
+    setEmailTouched(true);
+    if (emailError(email)) return;
+    if (!password) {
+      Alert.alert(t('Missing password'), t('Please enter your password.'));
       return;
     }
     setLoading(true);
@@ -37,104 +48,146 @@ export default function SignInScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.outer}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.container}>
-        <Text style={styles.title}>{t('Welcome back')}</Text>
-        <Text style={styles.subtitle}>{t('Sign in to your Two Small Things account.')}</Text>
+    <SafeAreaView style={[styles.outer, { backgroundColor: colors.surface.page }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.container}>
 
-        <TextInput
-          style={styles.input}
-          placeholder={t('Email')}
-          placeholderTextColor="#9A9A9A"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          accessibilityLabel={t('Email address')}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder={t('Password')}
-          placeholderTextColor="#9A9A9A"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoComplete="current-password"
-          accessibilityLabel={t('Password')}
-        />
+          <AppText variant="headline" style={{ color: colors.text.primary, marginBottom: 8 }}>
+            {t('Welcome back')}
+          </AppText>
+          <AppText variant="body" style={{ color: colors.text.secondary, marginBottom: 36 }}>
+            {t('Sign in to your TST account.')}
+          </AppText>
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSignIn}
-          disabled={loading}
-          accessibilityLabel={t('Sign in')}
-          accessibilityRole="button"
-        >
-          {loading ? (
-            <ActivityIndicator color="#FAFAF8" />
-          ) : (
-            <Text style={styles.buttonText}>{t('Sign in')}</Text>
+          {/* Email */}
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.surface.elevated,
+                color: colors.text.primary,
+                borderColor: emailErr ? '#DC2626' : colors.border.subtle,
+              },
+            ]}
+            placeholder={t('Email')}
+            placeholderTextColor={colors.text.tertiary}
+            value={email}
+            onChangeText={v => { setEmail(v); }}
+            onBlur={() => setEmailTouched(true)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            accessibilityLabel={t('Email address')}
+          />
+          {emailErr && (
+            <AppText variant="caption" style={styles.fieldError}>
+              {t(emailErr)}
+            </AppText>
           )}
-        </TouchableOpacity>
 
-        <Link href="/(auth)/sign-up" asChild>
-          <TouchableOpacity accessibilityRole="link">
-            <Text style={styles.linkText}>{t("Don't have an account? Sign up")}</Text>
+          {/* Password */}
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.surface.elevated,
+                color: colors.text.primary,
+                borderColor: colors.border.subtle,
+                marginTop: emailErr ? 4 : 0,
+              },
+            ]}
+            placeholder={t('Password')}
+            placeholderTextColor={colors.text.tertiary}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete="current-password"
+            accessibilityLabel={t('Password')}
+          />
+
+          <TouchableOpacity
+            onPress={() => router.push('/(auth)/forgot-password' as any)} // eslint-disable-line @typescript-eslint/no-explicit-any
+            style={styles.forgotRow}
+            accessibilityRole="link"
+            accessibilityLabel={t('Forgot password')}
+          >
+            <AppText variant="caption" style={{ color: colors.accent.primary }}>
+              {t('Forgot password?')}
+            </AppText>
           </TouchableOpacity>
-        </Link>
-      </View>
-    </KeyboardAvoidingView>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              { backgroundColor: colors.accent.primary, opacity: canSubmit ? 1 : 0.45 },
+            ]}
+            onPress={handleSignIn}
+            disabled={!canSubmit}
+            accessibilityLabel={t('Sign in')}
+            accessibilityRole="button"
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <AppText variant="bodyMedium" style={{ color: '#FFFFFF' }}>
+                {t('Sign in')}
+              </AppText>
+            )}
+          </TouchableOpacity>
+
+          <Link href="/(auth)/sign-up" asChild>
+            <TouchableOpacity accessibilityRole="link" style={styles.linkRow}>
+              <AppText variant="caption" style={{ color: colors.text.secondary, textDecorationLine: 'underline' }}>
+                {t("Don't have an account? Sign up")}
+              </AppText>
+            </TouchableOpacity>
+          </Link>
+
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  outer: { flex: 1, backgroundColor: '#FAFAF8' },
-  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 32 },
-  title: {
-    fontFamily: 'SourceSerif4_600SemiBold',
-    fontSize: 32,
-    color: '#1A1A1A',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-    color: '#6B6B6B',
-    marginBottom: 32,
+  outer: { flex: 1 },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 32,
   },
   input: {
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
-    color: '#1A1A1A',
-    backgroundColor: '#F0F0EE',
     borderRadius: 10,
+    borderWidth: 0.5,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    marginBottom: 12,
+    marginBottom: 2,
+  },
+  fieldError: {
+    color: '#DC2626',
+    marginBottom: 8,
+    marginLeft: 2,
+  },
+  forgotRow: {
+    alignSelf: 'flex-end',
+    paddingVertical: 6,
+    marginTop: 6,
+    marginBottom: 8,
   },
   button: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 20,
   },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 16,
-    color: '#FAFAF8',
-  },
-  linkText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    color: '#6B6B6B',
-    textAlign: 'center',
-    textDecorationLine: 'underline',
+  linkRow: {
+    alignItems: 'center',
+    paddingVertical: 8,
   },
 });

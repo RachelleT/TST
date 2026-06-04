@@ -5,6 +5,7 @@ export const CREATE_TABLES_SQL = `
   CREATE TABLE IF NOT EXISTS profiles (
     id TEXT PRIMARY KEY,
     display_name TEXT,
+    onboarding_completed_at TEXT,
     notification_settings TEXT,
     quiz_settings TEXT,
     interest_areas TEXT,
@@ -120,4 +121,4 @@ export const CREATE_TABLES_SQL = `
   );
 `;
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;

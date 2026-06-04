@@ -21,11 +21,26 @@ export async function runMigrations(): Promise<void> {
 
   const currentVersion = versionRow ? parseInt(versionRow.value, 10) : 0;
 
-  if (currentVersion < SCHEMA_VERSION) {
+  if (currentVersion >= SCHEMA_VERSION) return;
+
+  // v0 → v1: create all tables from scratch
+  if (currentVersion < 1) {
     await database.execAsync(CREATE_TABLES_SQL);
-    await database.runAsync(
-      `INSERT OR REPLACE INTO _meta (key, value) VALUES ('schema_version', ?)`,
-      [String(SCHEMA_VERSION)],
-    );
   }
+
+  // v1 → v2: add onboarding_completed_at to profiles
+  if (currentVersion === 1) {
+    try {
+      await database.execAsync(
+        'ALTER TABLE profiles ADD COLUMN onboarding_completed_at TEXT',
+      );
+    } catch {
+      // Column may already exist if CREATE_TABLES_SQL was just run above (fresh install).
+    }
+  }
+
+  await database.runAsync(
+    `INSERT OR REPLACE INTO _meta (key, value) VALUES ('schema_version', ?)`,
+    [String(SCHEMA_VERSION)],
+  );
 }

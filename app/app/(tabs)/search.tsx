@@ -245,15 +245,21 @@ export default function SearchScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qParam]);
 
+  // Key is scoped to the user so a new user (or a different user) starts with no history.
+  function recentKey() {
+    return `recent_searches_${session?.user.id ?? 'anon'}`;
+  }
+
   async function loadRecentSearches() {
-    const raw = await getMetaValue('recent_searches');
+    const raw = await getMetaValue(recentKey());
     if (raw) setRecentSearches(JSON.parse(raw) as string[]);
+    else setRecentSearches([]); // ensure a fresh list for new users
   }
 
   async function persistRecentSearch(word: string, current: string[]) {
     const next = [word, ...current.filter((w) => w !== word)].slice(0, 10);
     setRecentSearches(next);
-    await setMetaValue('recent_searches', JSON.stringify(next));
+    await setMetaValue(recentKey(), JSON.stringify(next));
   }
 
   function handleQueryChange(text: string) {

@@ -54,7 +54,7 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { session, initialized, initialize } = useAuthStore();
+  const { session, initialized, initialize, profile, profileLoaded } = useAuthStore();
 
   useEffect(() => {
     runMigrations().catch(console.error);
@@ -62,20 +62,34 @@ function RootLayoutNav() {
   }, [initialize]);
 
   useEffect(() => {
-    if (!initialized) return;
+    // Wait until both auth and profile are resolved before routing.
+    if (!initialized || !profileLoaded) return;
+
     SplashScreen.hideAsync();
-    if (session) {
-      runnSyncIfStale().catch(console.error);
-      router.replace('/(tabs)/library');
-    } else {
-      router.replace('/(auth)/sign-in');
+
+    if (!session) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.replace('/(auth)/welcome' as any);
+      return;
     }
-  }, [initialized, session]);
+
+    if (!profile?.onboardingCompletedAt) {
+      // New user — send them through onboarding.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.replace('/(onboarding)/notifications' as any);
+      return;
+    }
+
+    // Returning user with completed onboarding.
+    runnSyncIfStale().catch(console.error);
+    router.replace('/(tabs)/library');
+  }, [initialized, session, profile, profileLoaded]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(onboarding)" />
     </Stack>
   );
 }
