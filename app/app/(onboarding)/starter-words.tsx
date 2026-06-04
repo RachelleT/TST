@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Animated,
 } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -145,17 +146,18 @@ function MiniCard({ word, isSaved, onToggle }: MiniCardProps) {
 
 // Banner that slides up after the first word is saved.
 function TwoThingsBanner({ visible, colors }: { visible: boolean; colors: { accent: { muted: string; primary: string }; text: { primary: string; secondary: string } } }) {
+  const reducedMotion = useReducedMotion();
   const slideAnim = useRef(new Animated.Value(80)).current;
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        friction: 8,
-      }).start();
+      if (reducedMotion) {
+        slideAnim.setValue(0);
+      } else {
+        Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
+      }
     }
-  }, [visible, slideAnim]);
+  }, [visible, slideAnim, reducedMotion]);
 
   if (!visible) return null;
 
@@ -165,6 +167,8 @@ function TwoThingsBanner({ visible, colors }: { visible: boolean; colors: { acce
         styles.banner,
         { backgroundColor: colors.accent.muted, transform: [{ translateY: slideAnim }] },
       ]}
+      accessibilityLiveRegion="polite"
+      accessibilityLabel={t('Every word in your library carries a small fact too — a flag, a wonder, an animal. Two small things, learned together.')}
     >
       <AppText style={{ fontSize: 20, marginRight: 10 }}>✦</AppText>
       <AppText variant="caption" style={{ color: colors.text.primary, flex: 1, lineHeight: 18 }}>

@@ -21,7 +21,7 @@ import {
   Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
@@ -125,9 +125,14 @@ function EntryScreen({
             <AppText variant="body" color={colors.text.secondary} style={styles.entrySubtitle}>
               {t(`Save at least ${QUIZ_MIN_WORDS} words to start a quiz.`)}
             </AppText>
-            <AppText variant="body" color={colors.text.tertiary} style={{ textAlign: 'center' }}>
+            <AppText variant="body" color={colors.text.tertiary} style={{ textAlign: 'center', marginBottom: 24 }}>
               {t(`You have ${wordCount} saved so far.`)}
             </AppText>
+            <Button
+              label={t('Go to Search')}
+              variant="secondary"
+              onPress={() => router.push('/(tabs)/search')}
+            />
           </>
         )}
       </ScrollView>
@@ -149,7 +154,12 @@ function ProgressBar({
   const { colors } = useTheme();
   const pct = total > 0 ? current / total : 0;
   return (
-    <View style={[styles.progressTrack, { backgroundColor: colors.border.subtle }]}>
+    <View
+      style={[styles.progressTrack, { backgroundColor: colors.border.subtle }]}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: total, now: current }}
+      accessibilityLabel={t(`Question ${current} of ${total}`)}
+    >
       <View style={[styles.progressFill, { width: `${pct * 100}%`, backgroundColor: color }]} />
     </View>
   );
@@ -219,6 +229,15 @@ function MCQuestionView({
               disabled={answered}
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected, disabled: answered }}
+              accessibilityLabel={
+                answered
+                  ? isCorrect
+                    ? t(`${option}, correct answer`)
+                    : isSelected
+                    ? t(`${option}, your answer, incorrect`)
+                    : option
+                  : option
+              }
             >
               <AppText
                 variant="body"
@@ -434,7 +453,7 @@ function SessionScreen({
         >
           {/* Header row */}
           <View style={styles.sessionHeader}>
-            <TouchableOpacity onPress={onQuit} accessibilityLabel={t('Quit quiz')}>
+            <TouchableOpacity onPress={onQuit} accessibilityLabel={t('Quit quiz')} accessibilityRole="button">
               <AppText variant="body" color={colors.text.tertiary}>
                 {t('Quit')}
               </AppText>

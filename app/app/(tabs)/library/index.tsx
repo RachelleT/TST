@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, memo } from 'react';
 import {
   View,
   FlatList,
@@ -20,7 +20,7 @@ import { runSync } from '@/lib/sync';
 import { backfillMissingSenses } from '@/lib/actions/backfill-senses';
 import { t } from '@/lib/i18n';
 
-function WordRow({ word, onPress }: { word: SavedWord; onPress: () => void }) {
+const WordRow = memo(function WordRow({ word, onPress }: { word: SavedWord; onPress: () => void }) {
   const { colors } = useTheme();
   const spacing = useSpacing();
 
@@ -59,7 +59,7 @@ function WordRow({ word, onPress }: { word: SavedWord; onPress: () => void }) {
       </AppText>
     </TouchableOpacity>
   );
-}
+});
 
 export default function LibraryIndex() {
   const { colors } = useTheme();
@@ -121,17 +121,23 @@ export default function LibraryIndex() {
         data={words}
         keyExtractor={(item) => item.id}
         contentContainerStyle={words.length === 0 ? styles.listEmpty : undefined}
+        // Performance hints — keeps memory usage low with large libraries
+        removeClippedSubviews
+        maxToRenderPerBatch={12}
+        windowSize={8}
+        initialNumToRender={20}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
             tintColor={colors.accent.primary}
+            accessibilityLabel={t('Syncing library')}
           />
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <AppText variant="title" color={colors.text.secondary} style={styles.emptyTitle}>
-              {t('No words yet')}
+              {t('Your library is empty')}
             </AppText>
             <AppText variant="body" color={colors.text.tertiary} style={styles.emptyBody}>
               {t('Search for a word and save it to start building your library.')}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -44,7 +44,7 @@ interface WordCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export function WordCard({
+export const WordCard = memo(function WordCard({
   word,
   fact,
   mode = 'preview',
@@ -257,7 +257,7 @@ export function WordCard({
       </View>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   frame: {
