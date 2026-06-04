@@ -5,6 +5,8 @@ import { useEffect } from 'react';
 import { lightColors, darkColors } from '@/lib/theme/colors';
 import { useAuthStore } from '@/lib/stores/auth';
 import { useNotificationStore } from '@/lib/stores/notifications';
+import { useProfileStore } from '@/lib/stores/profile';
+import { useThemePreference } from '@/lib/theme/ThemePreferenceContext';
 
 export default function TabLayout() {
   const scheme = useColorScheme();
@@ -13,21 +15,29 @@ export default function TabLayout() {
 
   const { session } = useAuthStore();
   const { initialized: notifInitialized, initialize: initNotifications, runSchedule } = useNotificationStore();
+  const { load: loadProfile, themePreference } = useProfileStore();
+  const { setPreference } = useThemePreference();
 
-  // On first mount (authenticated user in the app): load notification settings
-  // and run the scheduling pass.
   useEffect(() => {
     if (!session?.user.id) return;
     const userId = session.user.id;
 
+    // Load profile settings (theme, quiz prefs, etc.) and sync theme context.
+    loadProfile(userId).catch(console.error);
+
+    // Load notification settings and run the scheduling pass.
     if (!notifInitialized) {
       initNotifications(userId).then(() => runSchedule(userId)).catch(console.error);
     } else {
       runSchedule(userId).catch(console.error);
     }
-    // Only run on mount / user change, not on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user.id]);
+
+  // Keep the theme context in sync whenever the stored preference changes.
+  useEffect(() => {
+    setPreference(themePreference);
+  }, [themePreference, setPreference]);
 
   return (
     <Tabs

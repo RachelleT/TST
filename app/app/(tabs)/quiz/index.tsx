@@ -27,6 +27,7 @@ import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { useTheme } from '@/lib/hooks/useTheme';
 import { useAuthStore } from '@/lib/stores/auth';
+import { useProfileStore } from '@/lib/stores/profile';
 import { t } from '@/lib/i18n';
 
 import { generateSession, recordAnswer as dbRecordAnswer } from '@/features/quiz/engine';
@@ -617,10 +618,14 @@ function StatBox({
 export default function QuizIndex() {
   const { colors } = useTheme();
   const { session } = useAuthStore();
+  const { quizSettings } = useProfileStore();
 
   const [phase, setPhase] = useState<Phase>('entry');
   const [wordCount, setWordCount] = useState(0);
-  const [sessionLength, setSessionLength] = useState<SessionLength>(10);
+  // Initialise from stored default; user can override per-session in the entry screen.
+  const [sessionLength, setSessionLength] = useState<SessionLength>(
+    () => quizSettings.defaultLength as SessionLength,
+  );
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<RecordedAnswer[]>([]);

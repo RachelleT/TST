@@ -13,6 +13,7 @@ import {
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemePreferenceProvider } from '@/lib/theme/ThemePreferenceContext';
 import { useAuthStore } from '@/lib/stores/auth';
 import { runMigrations } from '@/lib/db/migrations';
 import { runnSyncIfStale } from '@/lib/sync';
@@ -55,7 +56,9 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <RootLayoutNav />
+      <ThemePreferenceProvider>
+        <RootLayoutNav />
+      </ThemePreferenceProvider>
     </QueryClientProvider>
   );
 }

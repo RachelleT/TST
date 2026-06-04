@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { getDb } from '@/lib/db/migrations';
+import { cancelAllNotifications } from '@/lib/notifications';
 
 interface Profile {
   id: string;
@@ -21,6 +23,7 @@ interface AuthState {
   resendVerificationEmail: (email: string) => Promise<void>;
   verifyEmailOtp: (email: string, token: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   completeOnboarding: (interestAreas: string[]) => Promise<void>;
 }
 
@@ -40,6 +43,25 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
   };
 }
 
+/** Wipe all user rows from local SQLite tables. Called on sign-out and account deletion. */
+async function clearLocalData(userId: string): Promise<void> {
+  try {
+    const db = await getDb();
+    await db.runAsync(`DELETE FROM saved_words         WHERE user_id = ?`, [userId]);
+    await db.runAsync(`DELETE FROM fact_assignments    WHERE user_id = ?`, [userId]);
+    await db.runAsync(`DELETE FROM quiz_attempts        WHERE user_id = ?`, [userId]);
+    await db.runAsync(`DELETE FROM notification_events WHERE user_id = ?`, [userId]);
+    await db.runAsync(`DELETE FROM fact_reports        WHERE user_id = ?`, [userId]);
+    // Clear user-scoped _meta keys (day word cache, recent searches, nudge timestamps).
+    await db.runAsync(
+      `DELETE FROM _meta WHERE key LIKE ? OR key LIKE ? OR key LIKE ?`,
+      [`day_word_${userId}%`, `recent_searches_${userId}`, `reengagement_nudge_${userId}`],
+    );
+  } catch (e) {
+    console.error('clearLocalData failed', e);
+  }
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   initialized: false,
@@ -55,14 +77,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       profile = await fetchProfile(currentSession.user.id);
     }
 
-    set({
-      session: currentSession,
-      initialized: true,
-      profile,
-      profileLoaded: true,
-    });
+    set({ session: currentSession, initialized: true, profile, profileLoaded: true });
 
-    // Listen for subsequent auth changes (sign in, sign out — not the initial session).
     supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (event === 'INITIAL_SESSION') return;
 
@@ -85,8 +101,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUp: async (email, password) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw new Error(error.message);
-    // When email confirmation is enabled, Supabase returns a user but no session.
-    // The session arrives later via onAuthStateChange once the user confirms.
     return { needsConfirmation: !data.session };
   },
 
@@ -98,28 +112,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   verifyEmailOtp: async (email, token) => {
     const { error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' });
     if (error) throw new Error(error.message);
-    // On success, onAuthStateChange fires SIGNED_IN → _layout.tsx routes to onboarding.
   },
 
   signOut: async () => {
+    const userId = get().session?.user.id;
+    await cancelAllNotifications();
     const { error } = await supabase.auth.signOut();
     if (error) throw new Error(error.message);
+    if (userId) await clearLocalData(userId);
+  },
+
+  deleteAccount: async () => {
+    const userId = get().session?.user.id;
+    if (!userId) throw new Error('Not signed in');
+    await cancelAllNotifications();
+    const { error } = await supabase.rpc('delete_account');
+    if (error) throw new Error(error.message);
+    await supabase.auth.signOut();
+    await clearLocalData(userId);
+    set({ session: null, profile: null });
   },
 
   completeOnboarding: async (interestAreas) => {
     const { session } = get();
     if (!session) return;
-
     const now = new Date().toISOString();
-
     await supabase
       .from('profiles')
-      .update({
-        onboarding_completed_at: now,
-        interest_areas: interestAreas,
-      })
+      .update({ onboarding_completed_at: now, interest_areas: interestAreas })
       .eq('id', session.user.id);
-
     set(state => ({
       profile: state.profile
         ? { ...state.profile, onboardingCompletedAt: now, interestAreas }
