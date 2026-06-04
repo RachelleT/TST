@@ -2,6 +2,7 @@ import 'react-native-url-polyfill/auto';
 import { useEffect } from 'react';
 import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import { useFonts } from 'expo-font';
 import {
   SourceSerif4_400Regular,
@@ -61,6 +62,18 @@ function RootLayoutNav() {
     initialize();
   }, [initialize]);
 
+  // Handle notification deep links — both cold-start and warm-resume.
+  useEffect(() => {
+    // Cold-start: notification that launched the app.
+    Notifications.getLastNotificationResponseAsync().then(response => {
+      if (response) handleNotificationResponse(response);
+    });
+
+    // Warm-resume: notification tapped while app was in background.
+    const sub = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+    return () => sub.remove();
+  }, []);
+
   useEffect(() => {
     // Wait until both auth and profile are resolved before routing.
     if (!initialized || !profileLoaded) return;
@@ -92,4 +105,19 @@ function RootLayoutNav() {
       <Stack.Screen name="(onboarding)" />
     </Stack>
   );
+}
+
+function handleNotificationResponse(response: Notifications.NotificationResponse) {
+  const data = response.notification.request.content.data as Record<string, unknown>;
+
+  if (data?.type === 'reengagement') {
+    router.push('/(tabs)/search');
+    return;
+  }
+
+  const savedWordId = data?.savedWordId as string | undefined;
+  if (savedWordId) {
+    // Navigate to the word's detail screen inside the library stack.
+    router.push(`/(tabs)/library/${savedWordId}`);
+  }
 }

@@ -1,18 +1,38 @@
 import { useColorScheme } from 'react-native';
 import { Tabs } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
+import { useEffect } from 'react';
 import { lightColors, darkColors } from '@/lib/theme/colors';
+import { useAuthStore } from '@/lib/stores/auth';
+import { useNotificationStore } from '@/lib/stores/notifications';
 
 export default function TabLayout() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   const colors = isDark ? darkColors : lightColors;
 
+  const { session } = useAuthStore();
+  const { initialized: notifInitialized, initialize: initNotifications, runSchedule } = useNotificationStore();
+
+  // On first mount (authenticated user in the app): load notification settings
+  // and run the scheduling pass.
+  useEffect(() => {
+    if (!session?.user.id) return;
+    const userId = session.user.id;
+
+    if (!notifInitialized) {
+      initNotifications(userId).then(() => runSchedule(userId)).catch(console.error);
+    } else {
+      runSchedule(userId).catch(console.error);
+    }
+    // Only run on mount / user change, not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user.id]);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
-        // ── Header ──
         headerStyle: {
           backgroundColor: colors.surface.card,
         },
@@ -23,7 +43,6 @@ export default function TabLayout() {
         },
         headerShadowVisible: false,
         headerTintColor: colors.text.primary,
-        // ── Tab bar ──
         tabBarStyle: {
           backgroundColor: colors.surface.card,
           borderTopColor: colors.border.subtle,
@@ -41,7 +60,7 @@ export default function TabLayout() {
         name="library"
         options={{
           title: 'Library',
-          headerShown: false, // library/_layout.tsx Stack handles its own header
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <SymbolView name="books.vertical" tintColor={color} size={24} />
           ),
@@ -60,7 +79,7 @@ export default function TabLayout() {
         name="quiz"
         options={{
           title: 'Quiz',
-          headerShown: false, // quiz/_layout.tsx Stack handles its own header
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <SymbolView name="checkmark.circle" tintColor={color} size={24} />
           ),
