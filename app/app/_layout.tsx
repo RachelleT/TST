@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
+import { configureNotificationHandler, setupAndroidChannel } from '@/lib/notifications';
 import { useFonts } from 'expo-font';
 import {
   SourceSerif4_400Regular,
@@ -17,6 +18,11 @@ import { runMigrations } from '@/lib/db/migrations';
 import { runnSyncIfStale } from '@/lib/sync';
 
 SplashScreen.preventAutoHideAsync();
+
+// Configure notification behaviour at module load time — must happen before
+// any notification is scheduled or received.
+configureNotificationHandler();
+setupAndroidChannel().catch(console.error);
 
 const queryClient = new QueryClient({
   defaultOptions: {

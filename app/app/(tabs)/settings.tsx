@@ -20,7 +20,7 @@ import { useAuthStore } from '@/lib/stores/auth';
 import { useSyncStore } from '@/lib/stores/sync';
 import { useNotificationStore } from '@/lib/stores/notifications';
 import { runSync } from '@/lib/sync';
-import { registerForPermissions } from '@/lib/notifications';
+import { registerForPermissions, scheduleTestNotification } from '@/lib/notifications';
 import { t } from '@/lib/i18n';
 import type { NotificationSettings } from '@/lib/notifications';
 
@@ -356,15 +356,14 @@ function NotificationsSection() {
             activeDays={settings.days}
             onChange={days => patch({ days })}
           />
-          <ToggleRow
-            label={t('Sound')}
-            value={settings.sound}
-            onChange={v => patch({ sound: v })}
-          />
-          <ToggleRow
-            label={t('Vibration')}
-            value={settings.vibration}
-            onChange={v => patch({ vibration: v })}
+          {/* Test row — fires a real notification 5 s from now to verify the pipeline */}
+          <Row
+            label={t('Send test notification')}
+            onPress={() => {
+              scheduleTestNotification()
+                .then(() => Alert.alert(t('On its way'), t('Put the app in the background — notification fires in 5 seconds.')))
+                .catch(e => Alert.alert(t('Error'), String(e)));
+            }}
           />
         </>
       )}

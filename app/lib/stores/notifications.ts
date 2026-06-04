@@ -21,7 +21,7 @@ interface NotificationState {
   initialize: (userId: string) => Promise<void>;
 
   /** Update one or more settings fields, persist, and reschedule. */
-  updateSettings: (userId: string, patch: Partial<NotificationSettings>) => Promise<void>;
+  updateSettings: (userId: string, patch: Partial<Omit<NotificationSettings, 'sound' | 'vibration'>>) => Promise<void>;
 
   /** Run the full schedule flow (called on app launch and after settings change). */
   runSchedule: (userId: string) => Promise<void>;
