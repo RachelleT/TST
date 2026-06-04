@@ -142,7 +142,7 @@ Scan the QR code with Expo Go (iOS or Android) or press `i`/`a` to open in a sim
 | 5 | ✅ Complete | Onboarding — welcome, notification permission, interest selection, starter words |
 | 6 | ✅ Complete | Notifications — local scheduling, word-of-day algorithm, settings UI |
 | 7 | ✅ Complete | Settings — profile, quiz prefs, theme, delete account, export data |
-| 8 | 🔜 Next | Polish + accessibility audit |
+| 8 | ✅ Complete | Polish — performance, accessibility, reduced motion, dynamic type |
 | 9 | ⏳ Deferred | Store readiness (App Store / Play Store submission) |
 
 ---
@@ -178,6 +178,12 @@ See [`docs/decisions.md`](docs/decisions.md) for the full reasoning. Short versi
 **SQLite schema version** is tracked in `_meta`. The current version is `2`. To add a column, bump `SCHEMA_VERSION` in `app/lib/db/schema.ts` and add an `ALTER TABLE` branch in `app/lib/db/migrations.ts`.
 
 **Notification testing.** The Settings screen has a "Send test notification" row. It fires a real notification 5 seconds after tapping — background the app to see it. Requires at least one saved word.
+
+**Accessibility.** All interactive elements carry `accessibilityRole` and `accessibilityLabel`. The quiz progress bar uses `accessibilityRole="progressbar"` with `accessibilityValue` so VoiceOver/TalkBack announces progress. Quiz answer buttons include outcome context after answering ("Eloquent, correct answer"). `AppText` respects the device font-size setting via `allowFontScaling`, capped at 2× to prevent layout breaks.
+
+**Reduced motion.** `WordCard`'s fact-flip animation and the onboarding banner slide both read `useReducedMotion()` from `react-native-reanimated` and skip to the end state instantly when the user has reduced motion enabled in OS accessibility settings.
+
+**Performance.** `WordCard` and `WordRow` are wrapped in `React.memo`. The library `FlatList` uses `removeClippedSubviews`, `maxToRenderPerBatch`, and `windowSize` to stay smooth with large libraries.
 
 ---
 
