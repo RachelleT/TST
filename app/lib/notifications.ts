@@ -297,19 +297,45 @@ export async function scheduleNotifications(
   console.log(`[notifications] scheduled ${scheduled} notifications`);
 }
 
-/** Fire a real notification 5 seconds from now — use to verify the pipeline works. */
-export async function scheduleTestNotification(): Promise<void> {
+/**
+ * Fire a real morning-slot notification 5 seconds from now using an actual
+ * saved word. Falls back to a placeholder only if the library is empty.
+ */
+export async function scheduleTestNotification(userId: string): Promise<void> {
   if (await getPermissionStatus() !== 'granted') {
     console.warn('[notifications] permission not granted, cannot test');
     return;
   }
+
+  // Try to get today's chosen word first; if the library is too small for the
+  // normal algorithm, just grab any saved word directly.
+  let word = await pickAndPersistDayWord(userId);
+
+  if (!word) {
+    const db = await getDb();
+    const row = await db.getFirstAsync<{
+      id: string; user_id: string; word: string; sense_index: number;
+      part_of_speech: string; pronunciation: string | null; definition: string;
+      example_sentence: string | null; synonyms: string | null;
+      card_number: number; created_at: string; updated_at: string;
+    }>(
+      `SELECT * FROM saved_words WHERE user_id = ? AND deleted = 0 LIMIT 1`,
+      [userId],
+    );
+    if (row) word = rowToSavedWord(row);
+  }
+
+  const content = word
+    ? buildNotificationContent(word, 'morning')
+    : { title: 'TST · test', body: 'Save a word to see a real notification.' };
+
   const fireAt = new Date(Date.now() + 5_000);
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'TST · test notification',
-      body: 'Notifications are working.',
+      title: content.title,
+      body: content.body,
       sound: false,
-      data: { type: 'test' },
+      data: word ? { savedWordId: word.id, slot: 'morning' } : { type: 'test' },
       ...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
     },
     trigger: {

@@ -360,7 +360,8 @@ function NotificationsSection() {
           <Row
             label={t('Send test notification')}
             onPress={() => {
-              scheduleTestNotification()
+              if (!session?.user.id) return;
+              scheduleTestNotification(session.user.id)
                 .then(() => Alert.alert(t('On its way'), t('Put the app in the background — notification fires in 5 seconds.')))
                 .catch(e => Alert.alert(t('Error'), String(e)));
             }}
